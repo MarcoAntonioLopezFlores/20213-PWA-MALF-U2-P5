@@ -21,6 +21,7 @@ self.addEventListener("install", (event) => {
       "./index.html",
       "./css/page.css",
       "./images/inicio.jpg",
+      "./images/generica.jpg",
       "./js/app.js",
       "./pages/view-offline.html",
     ]);
@@ -51,53 +52,31 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const respuesta = caches
-    .match(event.request)
-    .then((response) => {
-      if (response) return response;
+  const respuesta = caches.match(event.request).then((response) => {
+    if (response) {
+      return response;
+    }
 
-      console.log("No está en caché");
-      return fetch(event.request).then((res) => {
-        caches.open(CACHE_DYNAMIC_NAME).then((cache) =>
+    return fetch(event.request)
+      .then((res) => {
+        caches.open(CACHE_DINAMYC_NAME).then((cache) =>
           cache.put(event.request, res).then(() => {
-            cleanCache(CACHE_DYNAMIC_NAME, 6);
+            cleanCache(CACHE_DINAMYC_NAME, 6);
           })
         );
 
         return res.clone();
+      })
+      .catch(() => {
+        if (event.request.headers.get("accept").includes("text/html")) {
+          return caches.match("./pages/view-offline.html");
+        }
+
+        if (event.request.headers.get("accept").includes("image/")) {
+          return caches.match("./images/generica.jpg");
+        }
       });
-    })
-    .catch((error) => {
-      console.log("Error al solicitar recurso");
-      if (event.request.headers.get("accept").includes("text/html")) {
-        return caches.match("./pages/view-offline.html");
-      }
-    });
+  });
 
   event.respondWith(respuesta);
-  //2.-Cache with network
-  //Busca cache y si no lo encuentra va a la red
-  /*const respuestaCache = caches.match(event.request).then((resp) => {
-    if (resp) {
-      //responde cache
-
-      return resp;
-    }
-    console.log("No esta en cache ", event.request.url);
-    //voy a la red
-    return fetch(event.request).then((respNet) => {
-      caches.open(CACHE_DINAMYC_NAME).then((cache) => {
-        cache.put(event.request, respNet).then(() => {
-          cleanCache(CACHE_DINAMYC_NAME, 6);
-        });
-      });
-
-      return respNet.clone();
-    });
-  });
-  event.respondWith(respuestaCache);*/
-  //1.-Cache only
-  /*console.log(event.request)
-    console.log(caches.match(event.request))
-    event.respondWith(caches.match(event.request))*/
 });
