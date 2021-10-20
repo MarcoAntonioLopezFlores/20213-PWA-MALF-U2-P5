@@ -59,6 +59,15 @@ self.addEventListener("fetch", (event) => {
 
     return fetch(event.request)
       .then((res) => {
+        if (!res) {
+          if (event.request.headers.get("accept").includes("text/html")) {
+            return caches.match("./pages/view-offline.html");
+          }
+
+          if (event.request.headers.get("accept").includes("image/")) {
+            return caches.match("./images/generica.jpg");
+          }
+        }
         caches.open(CACHE_DINAMYC_NAME).then((cache) =>
           cache.put(event.request, res).then(() => {
             cleanCache(CACHE_DINAMYC_NAME, 6);
